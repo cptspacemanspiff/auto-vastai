@@ -1,2 +1,2 @@
 # auto-vastai
-Container for automatic vast-ai instance management.
+Automatic vast-ai instance management.

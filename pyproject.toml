@@ -1,13 +1,15 @@
 [tool.poetry]
-name = "remote-ml-dev-tools"
+name = "remote-ml-devtools"
 version = "0.1.0"
 description = "Development tooling for doing ML development when you do not have a local GPU."
 authors = ["cptspacemanspiff <19273992+cptspacemanspiff@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "remote_ml_dev_tools"}]
+packages = [{include = "remote_ml_devtools"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+loguru = "^0.7.0"
+dacite = "^1.8.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

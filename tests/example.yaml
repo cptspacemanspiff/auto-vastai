@@ -2,15 +2,15 @@
     "API_KEY": "~/.vast_api_key",
     "estimation_params": {
             # sizes used for estimation parameters (GB)
-            "upload_size": 100,
-            "download_size": 100,
-            "storage_size": 100,
+            "up_usage": 1,
+            "down_usage": 30,
+            "storage_usage": 10,
             # instance duration for estimation parameters (Hrs)
             "duration": 8,
         },
     # instance type to request
     # on-demand, bid
-    "type": "on-demand", 
+    "type": "bid", 
     # query search fields
     "query": [
             #  "bundle_id",
@@ -54,7 +54,7 @@
             #  "inet_up_cost",
             #  "is_bid",
             #  "logo",
-             "machine_id == 2037",
+            #  "machine_id == 2037",
             #  "min_bid",
             #  "mobo_name",
             #  "num_gpus",

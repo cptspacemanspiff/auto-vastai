@@ -18,16 +18,16 @@ def test_price_calc():
     with open(test_path / 'offer_list.json') as json_file:
         offer_list = json.load(json_file)
         cost_list = [estimateCost(x,10,10,10,8) for x in offer_list]
-
         # this was value measured before:
         assert cost_list[0] == 1.0011111111111113
 
 def test_instance_search():
     getInstancesAvail(test_path/"example.yaml")
 
+    print("done")
 
 
 if __name__ == "__main__":
     # test_configparser()
-    # test_instance_search()
+    test_instance_search()
     test_price_calc()

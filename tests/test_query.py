@@ -1,6 +1,6 @@
 import json
 import yaml
-from remote_ml_devtools.RemoteMLManager import parseConfig, getInstancesAvail,estimateCost
+from remote_ml_devtools.RemoteMLManager import parseConfig, getOffersAvail,estimateCost
 import pathlib
 
 test_path = pathlib.Path(__file__).parent.resolve()
@@ -22,7 +22,7 @@ def test_price_calc():
         assert cost_list[0] == 1.0011111111111113
 
 def test_instance_search():
-    getInstancesAvail(test_path/"example.yaml")
+    getOffersAvail(test_path/"example.yaml")
 
     print("done")
 

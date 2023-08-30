@@ -161,25 +161,23 @@ def parse_vast_url(url_str: str) -> tuple[int, str]:
     -------
          tuple: instance_id and path.
     """
+    instance_id = None
     path = url_str
-    if ":" in url_str:
+    if (":" in url_str):
         url_parts = url_str.split(":", 2)
         if len(url_parts) == 2:
-            instance_id_str, path = url_parts
+            (instance_id, path) = url_parts
         else:
             raise ValueError("Invalid VRL (Vast resource locator).")
-
         try:
-            instance_id = int(instance_id_str)
-        except Exception:
+            instance_id = int(instance_id)
+        except:
             raise ValueError("Instance id must be an integer.")
 
     valid_unix_path_regex = re.compile('^(/)?([^/\0]+(/)?)+$')
     # Got this regex from https://stackoverflow.com/questions/537772/what-is-the-most-correct-regular-expression-for-a-unix-file-path
     if (path != "/") and (valid_unix_path_regex.match(path) is None):
-        raise ValueError(
-            f"Path component: {path} of VRL is not a valid Unix style path."
-        )
+        raise ValueError(f"Path component: {path} of VRL is not a valid Unix style path.")
 
     return (instance_id, path)
 

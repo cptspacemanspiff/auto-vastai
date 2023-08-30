@@ -25,6 +25,7 @@ from __future__ import print_function, unicode_literals
 
 import json
 import os
+import subprocess
 import sys
 import time
 from dataclasses import asdict
@@ -142,19 +143,37 @@ class VastClient:
             'src_path': src_path,
             'dst_path': dst_path,
         }
-        r = requests.put(url, json=req_json, timeout=10)
+        r = requests.put(url, json=req_json)
         r.raise_for_status()
-        if r.status_code == 200:
-            rj = r.json()
-            if rj['success']:
-                logger.info(
-                    'Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).'
-                )
+        if (r.status_code == 200):
+            rj = r.json();
+            #print(json.dumps(rj, indent=1, sort_keys=True))
+            if (rj["success"]) and ((src_id is None) or (dst_id is None)):
+                homedir = subprocess.getoutput("echo $HOME")
+                #print(f"homedir: {homedir}")
+                remote_port = None
+                identity = identity if (identity is not None) else f"{homedir}/.ssh/id_rsa"
+                if (src_id is None):
+                    #result = subprocess.run(f"mkdir -p {src_path}", shell=True)
+                    remote_port = rj["dst_port"]
+                    remote_addr = rj["dst_addr"]
+                    cmd = f"rsync -arz -v --progress --delete --rsh=ssh -e 'ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}/{dst_path}"
+                    print(cmd)
+                    result = subprocess.run(cmd, shell=True)
+                    #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", src_path, "vastai_kaalia@{remote_addr}::{dst_id}"], shell=True)
+                elif (dst_id is None):
+                    result = subprocess.run(f"mkdir -p {dst_path}", shell=True)
+                    remote_port = rj["src_port"]
+                    remote_addr = rj["src_addr"]
+                    cmd = f"sudo rsync -arz -v --progress --delete --rsh=ssh -e 'ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id}/{src_path} {dst_path}"
+                    print(cmd)
+                    result = subprocess.run(cmd, shell=True)
+                    #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", "vastai_kaalia@{remote_addr}::{src_id}", dst_path], shell=True)
             else:
-                logger.error(rj['msg'])
-        else:
-            logger.error(r.text)
-            logger.error('failed with error {r.status_code}'.format(**locals()))
+                if (rj["success"]):
+                    print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
+                else:
+                    print(rj["msg"])
 
     def search_offers(
         self,
@@ -570,7 +589,7 @@ class VastClient:
         create_from: str | None = None,
         force: bool | None = None,
         disk: float = 10,
-    ) -> str | None:
+    ) -> dict | None:
         """Creates a new instance.
 
         Args:
@@ -643,7 +662,7 @@ class VastClient:
         r.raise_for_status()
         logger.info('Started. {}'.format(r.json()))
 
-        return str(r.json())
+        return r.json()
 
     def change_bid(self, id: int, price: float) -> None:
         """Change the bid price for a spot/interruptible instance.

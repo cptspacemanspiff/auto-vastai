@@ -1,4 +1,5 @@
 from pathlib import Path
+import signal
 import sys
 from time import sleep
 import yaml
@@ -30,6 +31,8 @@ def parseConfig(config_path: Path):
 class InstanceManager:
     client: VastClient
     cfg: dict
+
+    exit_flag = False
 
     def __init__(self, cfg: dict) -> None:
         self.client = VastClient
@@ -172,16 +175,19 @@ class InstanceManager:
             logger.info(f"Confirming instances are ready.")
             instances = self.monitorInstances()
             if instances[0].actual_status == "running":
-                logger.info(f"Instance {instance_id} is ready, actual status is {instances[0].actual_status}, status is {instances[0].cur_state}")
+                logger.info(
+                    f"Instance {instance_id} is ready, actual status is {instances[0].actual_status}, status is {instances[0].cur_state}"
+                )
                 break
             logger.info(
                 f"""Waiting for instance {instance_id} to start, actual status is {instances[0].actual_status}, status is {instances[0].cur_state}"""
             )
             sleep(60)
-    
-def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
-    sys.exit(0)
+
+    def signal_handler(self, sig, frame):
+        logger.info("Manual shutdown requested, exiting.")
+        self.exit_flag = True
+
 
 def startAndMonitorInstance():
     import argparse
@@ -204,6 +210,8 @@ def startAndMonitorInstance():
     cfg = parseConfig(args.config)
     manager = InstanceManager(cfg)
 
+    signal.signal(signal.SIGINT, manager.signal_handler)
+
     # create a bid instance, if the list of current instances is empty:
     instance_list = manager.monitorInstances()
     if not instance_list:
@@ -214,14 +222,32 @@ def startAndMonitorInstance():
     else:
         instance_id = instance_list[0].id
         logger.info(f"Using instance {instance_id}")
-        manager.WaitForInstanceRunning(instance_id)
+        if not instance_list[0].actual_status == "running":
+            manager.WaitForInstanceRunning(instance_id)
 
     logger.info(f"Instance {instance_id} is ready.")
+
+    # copy to remote from local:
     logger.info(f"Syncing {args.directory} to instance {instance_id}")
-    manager.client.copy(str(Path(args.directory).absolute()),str(instance_id)+":/workspace")
+    manager.client.copy(
+        str(Path(args.directory).absolute()), str(instance_id) + ":/workspace"
+    )
 
-    # copy data back from remote to local:
+    # monitor the connection:
+    logger.info(f"Monitoring instance {instance_id} for exit.")
 
+    monitorIdx = 0
+    while not manager.exit_flag:
+        sleep(1)
+        monitorIdx += 1
+        if monitorIdx % 60 == 0:
+            manager.monitorInstances()
+
+    # copy from remote to local:
+    logger.info(f"Syncing {args.directory} from instance {instance_id}")
+    manager.client.copy(
+        str(instance_id) + ":/workspace", str(Path(args.directory).absolute())
+    )
 
 
 def plotActiveOffersByCost():
